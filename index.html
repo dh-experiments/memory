@@ -14,14 +14,14 @@
 <script src="ui/scripts/common.js" type="text/javascript"></script>
 <script src="ui/scripts/facebook.js" type="text/javascript"></script>
 <script>
-var G;
+var g;
 Facebook.initialize("399677953432540");
 Facebook.login();
 Facebook.get('/me/friends', function(r){
 	if(r.data) {
-		G = new game(r.data, 7);
-		G.join('Alex');
-		G.join('Eric');
+		g = new game(r.data, 26);
+		g.join('Alex');
+		g.join('Eric');
 	}
 });
 </script>

@@ -13,6 +13,9 @@ var game = function(data, numCards) {
 	var players = [];
 	var whosTurn = 0;
 
+	// Turns
+	var paused = false;
+
 	/*--------- Initialize ---------*/
 
 	// Create array of random people
@@ -35,45 +38,49 @@ var game = function(data, numCards) {
 
 	// Choices
 	$('.card').live(TAP_EVENT, function(){
-		var self = $(this);
-		var selected = self.attr('data-id');
-		self.addClass('selected');
-		switch(choices.length) {
-			case 0:
-				choices.push(selected);
-				break;
-			case 1:
-				// Make sure didn't double click
-				if(choices[0] != selected) {
+		if(!paused) {
+			var self = $(this);
+			var selected = self.attr('data-id');
+			self.addClass('selected');
+			switch(choices.length) {
+				case 0:
 					choices.push(selected);
-					if(cards[choices[0]]==cards[choices[1]]) {
-						// Get Points
-						players[whosTurn].score += ptsPerMatch;
+					break;
+				case 1:
+					// Prevent clicks until next turn
+					paused = true;
+					
+					// Make sure didn't double click
+					if(choices[0] != selected) {
+						choices.push(selected);
+						// There's a match
+						if(cards[choices[0]]==cards[choices[1]]) {
+							// Get Points
+							players[whosTurn].score += ptsPerMatch;
 
-						// Remove cards
-						GUI.removeCards(choices);
+							// Decrement amount left
+							pairsLeft--;
 
-						// Decrement amount left
-						pairsLeft--;
+							// Check game finished.  If so, find winner
+							if(pairsLeft<=0) {
+								var winner = getWinner();
+								alert(players[winner.playerId].name+" won with "+winner.score+"points!");
+							}
 
-						// Check game finished.  If so, find winner
-						if(pairsLeft<=0) {
-							var winner = getWinner();
-							alert(players[winner.playerId].name+" won with "+winner.score+"points!");
+							// Remove cards
+							GUI.removeCards(choices);
+
+							newTurn(true);
+						} else {  // reset
+							newTurn();				
 						}
-						newTurn(true);
-					} else {  // reset
-						window.setTimeout(function(){
-							newTurn();
-						}, 1000);
 					}
-				}
-				break;
-			default:
-				newTurn();
-				break;
+					break;
+				default:
+					newTurn();
+					break;
+			}
 		}
-
 	});
 
 	function getWinner(){
@@ -89,14 +96,17 @@ var game = function(data, numCards) {
 	}
 
 	function newTurn(samePlayer){
-		GUI.newTurn();
 		choices = [];
 		var increment = 1;
 		if(samePlayer) {
 			increment = 0;
 		}
 		whosTurn = (whosTurn+increment)%players.length;
-		GUI.updateWhosTurn(players[whosTurn].name);
+		window.setTimeout(function(){
+			GUI.newTurn();
+			GUI.updateWhosTurn(players[whosTurn].name);
+			paused = false;
+		}, 1000);
 	}
 
 	/*--------- Public ---------*/
@@ -122,6 +132,7 @@ var gameUI = function() {
 	/*--------- Properties ---------*/
 
 	var cardHtmls = [];
+	var defaultDelay = 1000;
 
 	/*--------- Public ---------*/
 
@@ -162,9 +173,11 @@ var gameUI = function() {
 			$('#Turn .name').text(name);
 		},
 		removeCards : function(choices) {
-			for(var i=0, e=choices.length; i<e; i++) {
-				$('.card[data-id='+choices[i]+']').remove();
-			}
+			window.setTimeout(function(){
+				for(var i=0, e=choices.length; i<e; i++) {
+					$('.card[data-id='+choices[i]+']').remove();
+				}
+			}, defaultDelay);
 		},
 		newTurn : function() {
 			$('.card').removeClass('selected');
