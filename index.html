@@ -6,6 +6,7 @@
 <link rel="stylesheet" media="all" href="ui/stylesheets/default.css"/>
 </head>
 <body lang="en">
+<div id="Turn"><span class="name">Player</span>'s move</div>
 <ul id="Cards"></ul>
 <div id="fb-root"></div>
 <!--Javascript-->
@@ -13,41 +14,14 @@
 <script src="ui/scripts/common.js" type="text/javascript"></script>
 <script src="ui/scripts/facebook.js" type="text/javascript"></script>
 <script>
-var people = [];
-var numCards = 10;
-
-function randArr(upperBound, total) {
-	var rands = [];
-		
-	for(var i=0, e=total; i<e; i++) {
-		var num = Math.floor(Math.random()*(upperBound+1));
-		if(!inArr(num, rands)) {
-			rands.push(num);
-		} else {
-			i--;
-		}
-	}
-
-	return rands;
-}
-
-function inArr(item, arr) {
-	for(var i=0, e=arr.length; i<e; i++) {
-		if(arr[i]==item) {
-			return true;
-		}
-	}
-	return false;
-}
-
+var G;
 Facebook.initialize("399677953432540");
 Facebook.login();
 Facebook.get('/me/friends', function(r){
 	if(r.data) {
-		var rands = randArr(r.data.length, numCards);
-		for(var i=0, e=rands.length; i<e; i++) {
-			people.push(r.data[rands[i]]);
-		}
+		G = new game(r.data, 7);
+		G.join('Alex');
+		G.join('Eric');
 	}
 });
 </script>

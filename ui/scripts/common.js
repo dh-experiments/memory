@@ -1,48 +1,37 @@
-var TAP_EVENT = 'click';
-var choices = [];
+var game = function(data, numCards) {
 
-function generateCards(data) {
+	/*--------- Properties ---------*/
+
+	var pairsLeft = numCards;
 	var cards = [];
-	var cardHtmls = [];
+	var choices = [];  // 2 choices per turn
+	var TAP_EVENT = 'click';
+	var GUI = new gameUI();
+	var ptsPerMatch = 10;
 
-	// Generate dummy array
-	for(var i=0, e=data.length*2; i<e; i++) {
-		cards[i] = data[i%data.length];
+	// Players
+	var players = [];
+	var whosTurn = 0;
+
+	/*--------- Initialize ---------*/
+
+	// Create array of random people
+	var people = [];
+	var rands = randArr(data.length, numCards);
+	for(var i=0, e=rands.length; i<e; i++) {
+		people.push(data[rands[i]]);
+	}
+
+	// Duplicate the cards
+	for(var i=0, e=people.length*2; i<e; i++) {
+		cards[i] = people[i%people.length];
 	}
 
 	// Shuffle Cards
 	fisherYates(cards);
 
-	// Add Cards
-	for(var i=0, e=data.length*2; i<e; i++) {
-		// Generate card
-		var card = jQuery('<li/>', {
-		    'class' : 'card',
-		    'data-id' : cards[i].id,
-		    'html' : "<span>"+cards[i].name+"</span><div class='overlay'></div>"
-		});
-		// Generate avatar
-		var avatar = jQuery('<img/>', {
-		    'src' : "https://graph.facebook.com/"+cards[i].id+"/picture?width=160&height=160",
-		    'width' : "100%",
-		}).prependTo(card);
-
-		card.appendTo('#Cards');
-
-		// Push to existing cards
-		cardHtmls.push(card);
-	}
-
-	// Lock in place
-	for(var i=cardHtmls.length-1; i>=0; i--) {
-		var self = cardHtmls[i];
-		self.css({
-			'position':'absolute',
-			'top' : self.offset().top,
-			'left' : self.offset().left,
-			'margin' : 0
-		});
-	}
+	// Initialize Interface
+	GUI.initialize(cards);
 
 	// Choices
 	$('.card').live(TAP_EVENT, function(){
@@ -54,23 +43,176 @@ function generateCards(data) {
 				choices.push(selected);
 				break;
 			case 1:
-				choices.push(selected);
-				if(choices[0]==choices[1]) {
-					alert("match!");
-					// Remove cards
-					$('.card[data-id='+choices[0]+']').remove();
-				} else {  // reset
-					alert("fail");
+				// Make sure didn't double click
+				if(choices[0] != selected) {
+					choices.push(selected);
+					if(cards[choices[0]]==cards[choices[1]]) {
+						// Get Points
+						players[whosTurn].score += ptsPerMatch;
+
+						// Remove cards
+						GUI.removeCards(choices);
+
+						// Decrement amount left
+						pairsLeft--;
+
+						// Check game finished.  If so, find winner
+						if(pairsLeft<=0) {
+							var winner = getWinner();
+							alert(players[winner.playerId].name+" won with "+winner.score+"points!");
+						}
+						newTurn(true);
+					} else {  // reset
+						window.setTimeout(function(){
+							newTurn();
+						}, 1000);
+					}
 				}
-				newTurn()
 				break;
 			default:
-				newTurn()
+				newTurn();
 				break;
 		}
 
 	});
 
+	function getWinner(){
+		var highest = { score : 0, playerId : 0 };
+		for(var i=0, e=players.length; i<e; i++) {
+			if(players[i].score > highest.score) {
+				highest.score = players[i].score;
+				highest.playerId = i;
+			}
+		}
+
+		return highest;
+	}
+
+	function newTurn(samePlayer){
+		GUI.newTurn();
+		choices = [];
+		var increment = 1;
+		if(samePlayer) {
+			increment = 0;
+		}
+		whosTurn = (whosTurn+increment)%players.length;
+		GUI.updateWhosTurn(players[whosTurn].name);
+	}
+
+	/*--------- Public ---------*/
+
+	return {
+		getWinner : getWinner,
+		pairsLeft : function() {
+			return pairsLeft
+		},
+		players : players,
+		join : function(name){
+			var p = new player(name);
+			players.push(p);
+		},
+		restart : function(){
+			// Destroy old session, retain players, and restart
+		}
+	}
+}
+
+var gameUI = function() {
+
+	/*--------- Properties ---------*/
+
+	var cardHtmls = [];
+
+	/*--------- Public ---------*/
+
+	return {
+		initialize : function(cards) {
+			// Add Cards
+			for(var i=0, e=cards.length; i<e; i++) {
+				// Generate card
+				var card = jQuery('<li/>', {
+				    'class' : 'card',
+				    'data-id' : i,
+				    'html' : "<span>"+cards[i].name+"</span><div class='overlay'></div>"
+				});
+				// Generate avatar
+				var avatar = jQuery('<img/>', {
+				    'src' : "https://graph.facebook.com/"+cards[i].id+"/picture?width=160&height=160",
+				    'width' : "100%",
+				}).prependTo(card);
+
+				card.appendTo('#Cards');
+
+				// Push to existing cards
+				cardHtmls.push(card);
+			}
+
+			// Lock in place
+			for(var i=cardHtmls.length-1; i>=0; i--) {
+				var self = cardHtmls[i];
+				self.css({
+					'position':'absolute',
+					'top' : self.offset().top,
+					'left' : self.offset().left,
+					'margin' : 0
+				});
+			}
+		},
+		updateWhosTurn : function(name) {
+			$('#Turn .name').text(name);
+		},
+		removeCards : function(choices) {
+			for(var i=0, e=choices.length; i<e; i++) {
+				$('.card[data-id='+choices[i]+']').remove();
+			}
+		},
+		newTurn : function() {
+			$('.card').removeClass('selected');
+		}
+	}
+}
+
+var player = function(name) {
+	
+	/*--------- Properties ---------*/
+
+	var name = name || "Player";
+	var score = 0;
+
+	/*--------- Public ---------*/
+
+	return {
+		name : name,
+		score : score
+	}
+}
+
+////////////////////////////////////////////////////////////////////////////////////
+//  GENERIC FUNCTIONS
+////////////////////////////////////////////////////////////////////////////////////
+
+function randArr(upperBound, total) {
+	var rands = [];
+		
+	for(var i=0, e=total; i<e; i++) {
+		var num = Math.floor(Math.random()*(upperBound+1));
+		if(!inArr(num, rands)) {
+			rands.push(num);
+		} else {
+			i--;
+		}
+	}
+
+	return rands;
+}
+
+function inArr(item, arr) {
+	for(var i=0, e=arr.length; i<e; i++) {
+		if(arr[i]==item) {
+			return true;
+		}
+	}
+	return false;
 }
 
 function fisherYates ( myArray ) {
@@ -82,34 +224,5 @@ function fisherYates ( myArray ) {
 		var tempj = myArray[j];
 		myArray[i] = tempj;
 		myArray[j] = tempi;
-	}
-}
-
-function newTurn(){
-	$('.card[data-id='+choices[0]+']').removeClass('selected');
-	$('.card[data-id='+choices[1]+']').removeClass('selected');
-	choices = [];
-}
-
-var game = function(cardCount, messyCards) {
-	var cardsLeft = cardCount || 52;
-	var player1 = new player;
-	var player2 = new player;
-
-	return {
-		cardsLeft : cardsLeft,
-		player1 : player1,
-		player2 : player2
-	}
-}
-
-var player = function() {
-	// Properties
-	var name = "Player";
-	var score = 0;
-
-	return {
-		name : name,
-		score : score
 	}
 }

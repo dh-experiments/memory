@@ -5,13 +5,15 @@ a { text-decoration: none; }
 a img { border: 0; }
 ul { list-style: none; }
 input { -webkit-appearance: none; } /* iPad default styling */
-body { background: #eee; line-height: 1.4; font-family: Arial; }
+body { background: #eee; line-height: 1.4; font-family: Arial; position: relative; padding-top: 20px; }
 
 #Cards { float: left; width: 100%; height: 100%; position: relative; clear: both; }
 #Cards li { float: left; margin: 20px 0 0 20px; width: 160px; height: 190px; color: #ddd; background: #fff; border-radius: 12px; border: 12px solid #fff; cursor: pointer; text-align: center; line-height: 100%; position: relative; overflow: hidden; }
 #Cards li img,
 #Cards li span { display: block; }
 #Cards li span { color: #9c9c9c; padding: 10px 0; line-height: 20px; }
-#Cards li .overlay { position: absolute; bottom: 0; left: 0; width: 100%; height: 100%; background: #A4D3EE url(../images/avatar.png) bottom no-repeat; }
+#Cards li .overlay { position: absolute; bottom: 0; left: 0; width: 100%; height: 100%; background: #87CEFF url(../images/avatar.png) bottom no-repeat; }
 /* #Cards li { font-size: 160px; } */
 #Cards li.selected .overlay { opacity: 0; }
+
+#Turn { position: absolute; top: 0; left: 0; color: #444; font-size: 24px; text-align: center; width: 100%; padding: 10px 0; }
