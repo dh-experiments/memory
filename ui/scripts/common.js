@@ -1,28 +1,35 @@
-var CARDS = [];
-var cardHtmls = [];
-var data = ['A', 'B', 'C', 'D'];
-var container = $('#Cards');
+var TAP_EVENT = 'click';
 var choices = [];
-var tapEvent = 'click';
 
-window.onload = function() {
+function generateCards(data) {
+	var cards = [];
+	var cardHtmls = [];
 
 	// Generate dummy array
 	for(var i=0, e=data.length*2; i<e; i++) {
-		CARDS[i] = data[i%data.length];
+		cards[i] = data[i%data.length];
 	}
 
 	// Shuffle Cards
-	fisherYates(CARDS);
+	fisherYates(cards);
 
 	// Add Cards
 	for(var i=0, e=data.length*2; i<e; i++) {
-		// container.append("<li class='card' data-id='"+CARDS[i]+"'>"+CARDS[i]+"</li>");
+		// Generate card
 		var card = jQuery('<li/>', {
 		    'class' : 'card',
-		    'data-id' : CARDS[i],
-		    'text' : CARDS[i]
-		}).appendTo('#Cards');
+		    'data-id' : cards[i].id,
+		    'html' : "<span>"+cards[i].name+"</span><div class='overlay'></div>"
+		});
+		// Generate avatar
+		var avatar = jQuery('<img/>', {
+		    'src' : "https://graph.facebook.com/"+cards[i].id+"/picture?width=160&height=160",
+		    'width' : "100%",
+		}).prependTo(card);
+
+		card.appendTo('#Cards');
+
+		// Push to existing cards
 		cardHtmls.push(card);
 	}
 
@@ -37,7 +44,8 @@ window.onload = function() {
 		});
 	}
 
-	$('.card').live(tapEvent, function(){
+	// Choices
+	$('.card').live(TAP_EVENT, function(){
 		var self = $(this);
 		var selected = self.attr('data-id');
 		self.addClass('selected');
